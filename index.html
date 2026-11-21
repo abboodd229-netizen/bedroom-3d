@@ -12,12 +12,20 @@ button{font:inherit;font-size:14px;padding:8px 12px;border-radius:8px;border:1px
 button.main{background:#3a3631;color:#fff;border-color:#3a3631}
 #head{position:fixed;top:0;left:0;right:0;padding:10px 14px;background:rgba(255,255,255,0.82);backdrop-filter:blur(8px);font-size:14px}
 #head b{font-weight:600}
-#msg{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#3a3631;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:none}
+#vp{position:fixed;top:40px;left:0;right:0;padding:6px 10px 8px;background:rgba(255,255,255,0.82);backdrop-filter:blur(8px);font-size:13px;line-height:1.55}
+#vp .row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+#vp button{white-space:nowrap;font-size:13px;padding:6px 10px}
+#vp .op.on{background:#3a3631;color:#fff;border-color:#3a3631}
+#locb{background:#efe9de}
+#vinfo span{color:#6b6359}
+#vp.min #vinfo{display:none}
+#msg{position:fixed;top:170px;left:50%;transform:translateX(-50%);background:#3a3631;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:none}
 </style>
 </head>
 <body>
 <div id="wrap"></div>
-<div id="head"><b>تصور غرفة النوم 4×4 م</b> — اسحب للتدوير، وقرّب بإصبعين</div>
+<div id="head"><b>تصور غرفة النوم 4×4 م</b> — اختر تصميم التسريحة من الأزرار، واسحب للتدوير</div>
+<div id="vp"><div class="row"><button class="op" onclick="setV(0)">1 الأصلية</button><button class="op" onclick="setV(1)">2 معلّقة</button><button class="op" onclick="setV(2)">3 كونسول</button><button class="op" onclick="setV(3)">4 مودولار</button><button class="op" onclick="setV(4)">5 مخدّدة</button><button class="op" onclick="setV(5)">6 منحنية (الصورة)</button><button class="op" onclick="setV(6)">7 منحنية + لمسات</button><button id="locb" onclick="toggleLoc()"></button><button onclick="document.getElementById('vp').classList.toggle('min')">إخفاء/إظهار الوصف</button></div><div id="vinfo"></div></div>
 <div id="msg"></div>
 <div id="bar">
 <button onclick="go(0)">منظر عام</button>
@@ -142,14 +150,124 @@ B(1.55,1.85,0.03,2.59,3.393,3.4,black);B(3.55,3.85,0.03,2.59,3.393,3.4,black);
 [2.275,2.7,3.125].forEach(x=>B(x-0.003,x+0.003,0.03,2.59,3.392,3.396,gap));
 B(1.85,3.55,1.75,1.756,3.392,3.396,gap);
 B(1.42,1.55,0.03,2.59,3.393,3.398,wood);B(3.85,3.98,0.03,2.59,3.393,3.398,wood);
+// ===== خيارات التسريحة =====
+const V0=new THREE.Group();scene.add(V0);[dr,gl,mi,lamp].forEach(o=>V0.add(o));
+const V=[V0],mirrors=[mi];
+const mirM=M({envMap:cubeRT.texture,metalness:1,roughness:0.02,color:'#f2f4f5'});
+const ledM=M({color:'#FFD48A',emissive:'#FFBE5C',emissiveIntensity:1.6});
+const matte=M({color:'#161616',roughness:0.55});
+function shArch(w,h){const s=new THREE.Shape(),r=w/2;s.moveTo(-w/2,-h/2);s.lineTo(w/2,-h/2);s.lineTo(w/2,h/2-r);s.absarc(0,h/2-r,r,0,Math.PI,false);s.lineTo(-w/2,-h/2);return new THREE.ShapeGeometry(s,48);}
+function shPill(w,h){const s=new THREE.Shape(),r=w/2;s.moveTo(w/2,-h/2+r);s.lineTo(w/2,h/2-r);s.absarc(0,h/2-r,r,0,Math.PI,false);s.lineTo(-w/2,-h/2+r);s.absarc(0,-h/2+r,r,Math.PI,2*Math.PI,false);return new THREE.ShapeGeometry(s,48);}
+function shRR(w,h,r){const s=new THREE.Shape();s.moveTo(-w/2+r,-h/2);s.lineTo(w/2-r,-h/2);s.absarc(w/2-r,-h/2+r,r,-Math.PI/2,0,false);s.lineTo(w/2,h/2-r);s.absarc(w/2-r,h/2-r,r,0,Math.PI/2,false);s.lineTo(-w/2+r,h/2);s.absarc(-w/2+r,h/2-r,r,Math.PI/2,Math.PI,false);s.lineTo(-w/2,-h/2+r);s.absarc(-w/2+r,-h/2+r,r,Math.PI,1.5*Math.PI,false);return new THREE.ShapeGeometry(s,48);}
+function shCircle(d){const s=new THREE.Shape();s.absarc(0,0,d/2,0,Math.PI*2,false);return new THREE.ShapeGeometry(s,72);}
+function wallMirror(g,gGlow,gMir,y,z){const a=new THREE.Mesh(gGlow,ledM);a.rotation.y=Math.PI/2;a.position.set(0.043,y,z);g.add(a);const m=new THREE.Mesh(gMir,mirM);m.rotation.y=Math.PI/2;m.position.set(0.048,y,z);g.add(m);const l=new THREE.PointLight('#FFC370',0.55,1.8,2);l.position.set(0.15,y,z);g.add(l);return m;}
+const arc2=new THREE.Shape();arc2.absarc(0,0,0.25,-1.15,1.15,false);arc2.absarc(0,0,0.17,1.15,-1.15,true);
+const backGeo=new THREE.ExtrudeGeometry(arc2,{depth:0.28,bevelEnabled:true,bevelThickness:0.03,bevelSize:0.02,bevelSegments:4,curveSegments:40});
+function chair(g,x,z){const s=new THREE.Mesh(seat.geometry,fabric);s.position.set(x,0.005,z);s.castShadow=true;g.add(s);const b=new THREE.Mesh(backGeo,back.material);b.rotation.x=-Math.PI/2;b.position.set(x,0.44,z);b.castShadow=true;g.add(b);}
+const poufGeo=new THREE.LatheGeometry([[0,0],[0.2,0],[0.222,0.03],[0.228,0.36],[0.21,0.415],[0.15,0.44],[0,0.445]].map(p=>new THREE.Vector2(p[0],p[1])),48);
+function pouf(g,x,z){const p=new THREE.Mesh(poufGeo,fabric);p.position.set(x,0.005,z);p.castShadow=p.receiveShadow=true;g.add(p);}
+const vase=M({color:'#d9cfc0',roughness:0.4}),bronze=M({color:'#b8aa96',roughness:0.3,metalness:0.3});
+function newV(){const g=new THREE.Group();g.visible=false;scene.add(g);V.push(g);T=g;return g;}
+// 1) معلّقة عائمة 120
+{const g=newV();
+B(0,0.45,0.60,0.75,-0.6,0.6,wood,0.01);B(0,0.46,0.75,0.765,-0.6,0.6,black,0.004);
+B(0.45,0.453,0.61,0.74,-0.003,0.003,gap);
+B(0.448,0.455,0.722,0.732,-0.5,-0.1,metal);B(0.448,0.455,0.722,0.732,0.1,0.5,metal);
+B(0.08,0.4,0.596,0.6,-0.55,0.55,ledM);
+const ul=new THREE.PointLight('#FFC370',0.4,1.3,2);ul.position.set(0.25,0.45,0);g.add(ul);
+mirrors.push(wallMirror(g,shArch(0.78,1.08),shArch(0.7,1.0),1.47,0));
+B(0.16,0.26,0.765,0.95,0.38,0.48,vase,0.03);B(0.15,0.3,0.765,0.775,-0.45,-0.25,bronze,0.004);
+pouf(g,0.72,0);}
+// 2) كونسول بأرجل معدنية
+{const g=newV();
+[[0.01,0.03],[0.39,0.41]].forEach(([a,b])=>[[-0.55,-0.53],[0.53,0.55]].forEach(([c,d])=>B(a,b,0,0.74,c,d,metal)));
+[[-0.55,-0.53],[0.53,0.55]].forEach(([c,d])=>B(0.01,0.41,0.1,0.12,c,d,metal));
+B(0.03,0.39,0.12,0.14,-0.53,0.53,wood,0.004);
+B(0.02,0.41,0.6,0.74,-0.53,0.53,wood,0.006);B(0,0.42,0.74,0.76,-0.56,0.56,black,0.004);
+B(0.41,0.413,0.61,0.73,-0.003,0.003,gap);
+B(0.413,0.425,0.66,0.672,-0.35,-0.18,metal);B(0.413,0.425,0.66,0.672,0.18,0.35,metal);
+mirrors.push(wallMirror(g,shCircle(0.9),shCircle(0.8),1.47,0));
+const ring=new THREE.Mesh(new THREE.TorusGeometry(0.405,0.012,12,96),metal);ring.rotation.y=Math.PI/2;ring.position.set(0.055,1.47,0);g.add(ring);
+B(0.12,0.3,0.14,0.32,-0.4,-0.1,M({color:'#cdbfa8',roughness:1}),0.03);
+B(0.14,0.24,0.76,0.98,0.36,0.46,vase,0.03);
+chair(g,0.74,0);}
+// 3) مودولار: برجين + سطح
+{const g=newV();
+[-0.5,0.5].forEach(zc=>{B(0,0.45,0.02,0.74,zc-0.2,zc+0.2,wood,0.006);B(0.02,0.43,0,0.02,zc-0.18,zc+0.18,matte);
+[0.26,0.5].forEach(y=>B(0.45,0.453,y-0.003,y+0.003,zc-0.19,zc+0.19,gap));
+[0.14,0.38,0.62].forEach(y=>B(0.453,0.466,y-0.006,y+0.006,zc-0.06,zc+0.06,metal));});
+B(0,0.46,0.74,0.76,-0.72,0.72,black,0.004);
+mirrors.push(wallMirror(g,shRR(1.18,0.93,0.14),shRR(1.1,0.85,0.1),1.42,0));
+B(0.12,0.32,0.76,0.772,0.3,0.6,bronze,0.004);B(0.17,0.25,0.772,0.92,0.4,0.48,vase,0.03);
+pouf(g,0.66,0);}
+// 4) مخدّدة بشرائح
+{const g=newV();
+B(0,0.4,0,0.56,-0.5,-0.44,wood,0.02);B(0,0.4,0,0.56,0.44,0.5,wood,0.02);
+B(0,0.4,0.56,0.76,-0.5,0.5,wood,0.03);
+const fl=new THREE.CylinderGeometry(0.0125,0.0125,0.18,10);
+for(let i=0;i<40;i++){const z=-0.4875+i*0.025;const c=new THREE.Mesh(fl,wood);c.position.set(0.4,0.66,z);c.castShadow=true;g.add(c);}
+[[-0.5,-0.44],[0.44,0.5]].forEach(([a,b])=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(0.0125,0.0125,0.54,10),wood);c.position.set(0.4,0.28,(a+b)/2);g.add(c);});
+B(0,0.42,0.76,0.78,-0.51,0.51,black,0.008);
+mirrors.push(wallMirror(g,shPill(0.68,1.18),shPill(0.6,1.1),1.52,0));
+B(0.14,0.24,0.78,1.0,-0.42,-0.32,vase,0.03);
+chair(g,0.74,0);}
+// 6 و 7) تسريحة بطرف منحني (من الصورة)
+function planGeo(d,z1,z2,r,h){const s=new THREE.Shape();s.moveTo(0,-z1);s.lineTo(d,-z1);s.lineTo(d,-(z2-r));s.absarc(d-r,-(z2-r),r,0,-Math.PI/2,true);s.lineTo(0,-z2);s.lineTo(0,-z1);const g=new THREE.ExtrudeGeometry(s,{depth:h,bevelEnabled:false,curveSegments:40});g.rotateX(-Math.PI/2);return g;}
+function PM(g,geo,m,y){const o=new THREE.Mesh(geo,m);o.position.y=y;o.castShadow=o.receiveShadow=true;g.add(o);return o;}
+const whiteM=M({color:'#F1EDE6',roughness:0.45}),whiteB=M({map:boucle('#F3EEE6'),bumpMap:bTex,bumpScale:0.012,roughness:1});
+function chairM(g,x,z,m){const s=new THREE.Mesh(seat.geometry,m);s.position.set(x,0.005,z);s.castShadow=true;g.add(s);const b=new THREE.Mesh(backGeo,m);b.rotation.x=-Math.PI/2;b.position.set(x,0.44,z);b.castShadow=true;g.add(b);}
+function curvedVanity(body,top,knob,touch){const g=newV();
+// الجزء الأيسر: لوح جانبي + درج تحت السطح + فراغ للركب
+B(0,0.44,0,0.72,-0.6,-0.565,body,0.006);
+B(0,0.44,0.6,0.72,-0.565,0.1,body,0.006);
+B(0.44,0.447,0.612,0.708,-0.555,0.09,body,0.003);B(0.44,0.442,0.604,0.607,-0.565,0.1,gap);
+// الجزء الأيمن المنحني (أدراج)
+PM(g,planGeo(touch?0.41:0.44,0.1,0.6,0.3,touch?0.64:0.72),body,touch?0.08:0);
+if(touch){PM(g,planGeo(0.38,0.12,0.58,0.27,0.08),matte,0);PM(g,planGeo(0.39,0.11,0.59,0.28,0.004),ledM,0.004);const fl=new THREE.PointLight('#FFC370',0.35,1,2);fl.position.set(0.5,0.05,0.35);g.add(fl);}
+const fx=touch?0.41:0.44;
+[0.3,0.5].forEach(y=>B(fx,fx+0.003,y-0.003,y+0.003,0.11,0.29,gap));
+// السطح بطرف منحني + شريط إضاءة تحته
+PM(g,planGeo(0.46,-0.62,0.62,0.32,0.035),top,0.725);
+PM(g,planGeo(0.455,-0.6,0.61,0.31,0.006),ledM,0.718);
+const tl=new THREE.PointLight('#FFC370',0.3,0.9,2);tl.position.set(0.55,0.68,0.4);g.add(tl);
+// مقابض
+const kg=new THREE.SphereGeometry(0.014,16,12);
+[[fx,0.66,-0.23],[fx,0.2,0.2],[fx,0.41,0.2],[fx,0.6,0.2]].forEach(([x,y,z])=>{if(touch){B(x,x+0.012,y-0.006,y+0.006,z-0.07,z+0.07,metal);}else{const k=new THREE.Mesh(kg,knob);k.position.set(x+0.012,y,z);g.add(k);}});
+if(touch){const flg=new THREE.CylinderGeometry(0.011,0.011,0.1,10);for(let i=0;i<26;i++){const c=new THREE.Mesh(flg,body);c.position.set(0.445,0.66,-0.545+i*0.0245);g.add(c);}}
+// مرآة دائرية بإطار
+mirrors.push(wallMirror(g,shCircle(touch?0.98:0.8),shCircle(0.8),1.48,0.02));
+const ring=new THREE.Mesh(new THREE.TorusGeometry(touch?0.405:0.42,touch?0.012:0.035,16,96),touch?metal:whiteM);ring.rotation.y=Math.PI/2;ring.position.set(0.06,1.48,0.02);ring.castShadow=true;g.add(ring);
+// إكسسوارات
+B(0.12,0.22,0.76,0.97,-0.45,-0.35,vase,0.03);B(0.16,0.2,0.76,0.86,-0.3,-0.26,M({color:'#b07a55',roughness:0.6}),0.015);
+B(0.15,0.31,0.76,0.86,0.3,0.48,M({color:'#6b3f28',roughness:0.5}),0.01);
+chairM(g,0.72,-0.25,touch?fabric:whiteB);}
+curvedVanity(whiteM,whiteM,M({color:'#cbbfae',roughness:0.4,metalness:0.4}),false);
+curvedVanity(wood,black,metal,true);
+T=scene;
+const VI=[
+{n:'الأصلية المعتمدة',d:'سطح بأدراج 90×44 سم + دولاب زجاجي 40×44×232 بإطار أسود · مرآة 72×97 بزاوية منحنية وLED دافئ · كرسي دائري',f:'مرونة متوسطة: قطعتين تحتاج جدار عرضه 130 سم على الأقل.'},
+{n:'معلّقة عائمة',d:'120×45 سم، سماكة 15 سم، ارتفاع السطح 75 · خشب J0402 وسطح زجاج أسود · مرآة قوسية 70×100 مع LED + شريط LED تحتها · بوف بوكليه',f:'الأرضية تحتها مكشوفة فتكبّر الغرفة. تنفك من 4 براغي وتنركّب على أي جدار عرضه 120 سم.'},
+{n:'كونسول بأرجل سوداء',d:'110×42×76 سم · إطار معدن أسود رفيع + درجين J0402 ورف سفلي لسلة · سطح زجاج أسود · مرآة دائرية 80 سم بإطار أسود وLED · كرسي دائري',f:'الأكثر سهولة بالنقل: قطعة خفيفة مستقلة، والمرآة مستقلة عنها. تمشي حتى جنب النافذة أو في غرفة ثانية.'},
+{n:'مودولار: برجين وسطح',d:'برجين 40×45×74 سم بثلاث أدراج + سطح زجاج أسود 144 سم · فراغ للركب 60 سم · مرآة 110×85 بزوايا دائرية وLED · بوف',f:'الأكثر مرونة: البرجين يتفكّون ويصيرون كومودينات أو تخزين، والسطح ينقص أو يطول حسب الجدار.'},
+{n:'مخدّدة بشرائح',d:'100×42×78 سم · واجهة شرائح خشب J0402 عمودية بدرج ضغط بدون مقابض · زوايا ناعمة · مرآة كبسولة 60×110 مع LED · كرسي دائري',f:'قطعة قائمة بذاتها بشكل فني، تصلح على أي جدار عرضه 100 سم أو حتى جنب الدولاب.'},
+{n:'بطرف منحني (مثل الصورة)',d:'120×45×76 سم · أبيض مطفي · درج تحت السطح وفراغ للركب يسار + وحدة أدراج يمين بطرف دائري نصف قطره 30 سم · شريط LED تحت السطح · مرآة دائرية 80 سم بإطار أبيض عريض · كرسي بوكليه أبيض',f:'قائمة بذاتها وتنقل لأي جدار عرضه 120 سم. الطرف المنحني يكون في الجهة المفتوحة (ممكن تطلبها معكوسة).'},
+{n:'بطرف منحني + لمساتنا',d:'نفس الشكل بخشب J0402 · سطح زجاج أسود · شرائح مخدّدة على الدرج · مقابض سوداء رفيعة · قاعدة سوداء غاطسة بإضاءة أرضية · مرآة بإطار أسود رفيع وهالة LED · كرسي بوكليه بيج',f:'تربطها بالدولاب والكومودينات بنفس الخشب والأسود، والإضاءة تحتها تخليها كأنها طايرة. نفس مرونة النسخة البيضاء.'}];
+const VC=[0.85,2.55],LN=['بجانب السرير','عند طرف السرير'];let cur=0,loc=0;
+const wp=new THREE.Vector3();
+function refreshMirror(){scene.updateMatrixWorld(true);mirrors[cur].getWorldPosition(wp);cubeCam.position.set(wp.x+0.55,wp.y,wp.z);mirrors.forEach(m=>m.visible=false);cubeCam.update(renderer,scene);mirrors.forEach(m=>m.visible=true);}
+function placeV(){V.forEach((g,j)=>g.position.z=VC[loc]-(j===0?0.85:0));const z=VC[loc];views[1]=[[2.35,1.6,z+(loc?-0.95:0.95)],[0,1.05,z]];}
+function showInfo(){document.querySelectorAll('#vp .op').forEach((b,j)=>b.classList.toggle('on',j===cur));document.getElementById('locb').textContent='المكان: '+LN[loc];const i=VI[cur];document.getElementById('vinfo').innerHTML='<b>'+(cur+1)+'. '+i.n+'</b><br>'+i.d+'<br><span>'+i.f+'</span>';}
+window.setV=i=>{cur=i;V.forEach((g,j)=>g.visible=j===i);refreshMirror();showInfo();go(1);};
+window.toggleLoc=()=>{loc=1-loc;placeV();refreshMirror();showInfo();go(1);};
+
 scene.add(new THREE.HemisphereLight('#ffffff','#bfae9c',0.35));
 const sun=new THREE.DirectionalLight('#fff3e2',1.0);sun.position.set(7.5,3.4,2);sun.target.position.set(1.2,0,2);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.radius=5;sun.shadow.bias=-0.0004;Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:0.5,far:15});scene.add(sun,sun.target);
 [[2.35,1.1],[2.35,2.9],[0.8,2.6],[0.7,0.8]].forEach(([x,z])=>{const s=new THREE.SpotLight('#FFE2BA',0.45,6,0.75,0.6,1.5);s.position.set(x,2.78,z);s.target.position.set(x,0,z);scene.add(s,s.target);const d=new THREE.Mesh(new THREE.CircleGeometry(0.045,24),M({color:'#fff',emissive:'#FFE9C8',emissiveIntensity:1.5}));d.rotation.x=Math.PI/2;d.position.set(x,2.795,z);scene.add(d);});
 const views=[[[6.3,4.8,6.4],[2,0.8,2]],[[1.9,1.5,1.7],[0,1.3,0.8]],[[2.6,1.6,0.9],[2.7,1.2,4]],[[2.35,1.7,3.3],[2.35,0.6,0.6]],[[2.6,1.3,3.1],[0.9,0,2.6]],[[0.9,1.55,2.9],[4,1.6,1.4]]];
 let anim=null;window.go=i=>{anim={p:new THREE.Vector3(...views[i][0]),t:new THREE.Vector3(...views[i][1])};};
-mi.visible=false;cubeCam.update(renderer,scene);mi.visible=true;
+placeV();refreshMirror();showInfo();
 const msg=document.getElementById('msg');
-window.shot=()=>{renderer.render(scene,camera);const url=renderer.domElement.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download='ghurfat-alnawm.png';document.body.appendChild(a);a.click();a.remove();msg.textContent='تم حفظ الصورة';msg.style.display='block';setTimeout(()=>msg.style.display='none',1800);};
+window.shot=()=>{renderer.render(scene,camera);const url=renderer.domElement.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download='ghurfat-alnawm-tasriha-'+(cur+1)+'.png';document.body.appendChild(a);a.click();a.remove();msg.textContent='تم حفظ الصورة';msg.style.display='block';setTimeout(()=>msg.style.display='none',1800);};
 function loop(){requestAnimationFrame(loop);if(anim){camera.position.lerp(anim.p,0.08);controls.target.lerp(anim.t,0.08);if(camera.position.distanceTo(anim.p)<0.01)anim=null;}controls.update();renderer.render(scene,camera);}
 loop();
 addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
